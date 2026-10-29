@@ -8,10 +8,12 @@ import SectionTitle from '@/components/shared/SectionTitle.vue'
 import FeatureItem from '@/components/shared/FeatureItem.vue'
 import SpecialtyChip from '@/components/shared/SpecialtyChip.vue'
 import DoctorCard from '@/components/shared/DoctorCard.vue'
+import api from '@/services/api'
 import { listarEspecialidades, maisAvaliados } from '@/services/profissionais'
 import heroImage from '@/assets/imagemhome.png'
 
 const router = useRouter()
+const usuario = ref(null)
 
 // ---- Dados vindos do backend ----
 const especialidades = ref([])
@@ -74,9 +76,24 @@ async function carregarMedicos() {
 }
 
 onMounted(() => {
+  carregarUsuario()
   carregarEspecialidades()
   carregarMedicos()
 })
+
+async function carregarUsuario() {
+  try {
+    const { data } = await api.get('/api/v1/auth/eu')
+    usuario.value = { name: data.nome, role: 'Paciente' }
+  } catch {
+    usuario.value = null
+  }
+}
+
+function logout() {
+  api.clearAccessToken()
+  usuario.value = null
+}
 
 // ---- Navegação ----
 // A tela /busca lê id_especialidade da query string (mesmo nome do filtro da API)
@@ -121,7 +138,7 @@ const destaques = [
 
 <template>
   <div class="flex min-h-screen flex-col bg-[#f8faff]">
-    <AppHeader />
+    <AppHeader :user="usuario" @logout="logout" />
 
     <main class="flex-1">
       <!-- Hero: título + busca, foto à direita com degradê para o fundo -->
