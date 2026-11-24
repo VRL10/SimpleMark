@@ -39,7 +39,7 @@ async function logout() {
   <header class="w-full border-b border-[#dce5ee] bg-white">
     <div class="mx-auto flex h-32 max-w-500 items-center justify-between gap-8 px-12">
       <RouterLink
-        :to="auth.rotaInicial"
+        to="/administracao/usuarios"
         class="inline-flex items-center"
         aria-label="SimpleMark"
       >
