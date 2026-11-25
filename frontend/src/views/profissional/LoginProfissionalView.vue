@@ -7,16 +7,14 @@
  *   - Coluna direita: imagem ilustrativa (escondida em telas < lg)
  *
  * Componentes usados:
- *   - FormField (e-mail e senha)
- *   - FormButton (Entrar e Cadastre-se agora)
- *   - BackLink (retornar à tela de modalidades)
+ *   - FormField  (e-mail e senha)
+ *   - FormButton (Entrar e Cadastre-se agora
  */
 
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import FormField from '@/components/shared/FormField.vue'
 import FormButton from '@/components/shared/FormButton.vue'
-import BackLink from '@/components/shared/BackLink.vue'
 import heroImage from '@/assets/imagemprofissional.png'
 import { useLogin } from '@/composables/useLogin'
 
@@ -30,12 +28,16 @@ const form = reactive({
   lembrar: false,
 })
 
-// Caminhos dos ícones (Heroicons 24x24)
+
+
+// Caminhos "d" dos ícones (Heroicons 24x24)
 const icons = {
   mail: 'M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75',
   lock: 'M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z',
   login: 'M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9',
 }
+
+
 
 function irParaCadastro() {
   router.push({ name: 'cadastro/profissional' })
@@ -44,36 +46,23 @@ function irParaCadastro() {
 
 <template>
   <main class="grid min-h-screen bg-[#fafaff] lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)]">
-
     <!-- Coluna do formulário -->
     <section class="flex flex-col px-6 pt-6 sm:px-10 lg:pt-8">
-
       <img
         src="/LOGO%20OFICIAL%20SEM%20FUNDO.png"
         alt="Simple Mark"
         class="h-36 w-auto self-start"
       />
 
-      <!-- Cartão do formulário -->
-      <div class="relative my-auto w-full max-w-111.75 py-8 lg:ml-16">
-        <!-- Retorna à tela de modalidades. Fica no respiro acima do cartão (posição absoluta: não desloca o cartão);
-             pl-0! e pt-0! anulam o recuo padrão do BackLink; left-6 / lg:-left-10 alinham a seta com o início da logo. -->
-        <BackLink :to="{ name: 'login' }" class="absolute left-6 top-1 pl-0! pt-0! lg:-left-10" />
-
+      <!-- my-auto centraliza o cartão no espaço entre a logo e o fim da página (margens iguais em cima e embaixo) -->
+      <div class="my-auto w-full max-w-111.75 py-8 lg:ml-16">
         <div class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-10">
-
           <header class="mb-8">
-            <h1 class="text-2xl font-medium text-[#00507a]">
-              Acesse sua conta
-            </h1>
-
-            <p class="mt-2 text-[15px] text-gray-700">
-              Bem-vindo ao Portal do Profissional
-            </p>
+            <h1 class="text-2xl font-medium text-[#00507a]">Acesse sua conta</h1>
+            <p class="mt-2 text-[15px] text-gray-700">Bem-vindo ao Portal do Profissional</p>
           </header>
 
           <form class="flex flex-col gap-6" @submit.prevent="entrar(form)">
-
             <FormField
               v-model="form.email"
               label="E-mail"
@@ -108,21 +97,13 @@ function irParaCadastro() {
               </RouterLink>
             </div>
 
-            <p
-              v-if="erro"
-              role="alert"
-              class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-            >
-              {{ erro }}
+            <p v-if="erro" role="alert"
+               class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+               {{ erro }}
             </p>
 
-            <FormButton
-              type="submit"
-              class="w-full"
-              :disabled="carregando"
-            >
+            <FormButton type="submit" class="w-full" :disabled="carregando">
               Entrar
-
               <svg
                 class="size-5"
                 xmlns="http://www.w3.org/2000/svg"
@@ -132,21 +113,13 @@ function irParaCadastro() {
                 stroke="currentColor"
                 aria-hidden="true"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  :d="icons.login"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" :d="icons.login" />
               </svg>
             </FormButton>
-
           </form>
 
           <div class="mt-8 flex flex-col items-center gap-4 border-t border-gray-200 pt-8">
-            <p class="text-[15px] text-gray-700">
-              Ainda não tem uma conta?
-            </p>
-
+            <p class="text-[15px] text-gray-700">Ainda não tem uma conta?</p>
             <FormButton
               variant="text"
               class="border-2 border-[#042d5c] bg-white"
@@ -155,7 +128,6 @@ function irParaCadastro() {
               Cadastre-se agora
             </FormButton>
           </div>
-
         </div>
       </div>
     </section>
@@ -168,6 +140,5 @@ function irParaCadastro() {
         class="absolute inset-0 size-full object-cover object-right"
       />
     </aside>
-
   </main>
 </template>

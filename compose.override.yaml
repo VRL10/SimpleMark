@@ -1,0 +1,17 @@
+# Ajustes SÓ PARA TESTE LOCAL (não versionado: listado em .git/info/exclude).
+# O docker compose lê este arquivo automaticamente junto com o compose.yaml.
+#
+# O login manda o código por SMTP com SSL; aqui o Mailpit passa a aceitar SSL
+# (certificado autoassinado gerado na hora) e qualquer usuário/senha.
+services:
+  # Pagamento simulado (aprovado na hora, sem Mercado Pago) — só teste local
+  backend:
+    environment:
+      PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-false}
+
+  mailpit:
+    environment:
+      MP_SMTP_TLS_CERT: "sans:mailpit,localhost"
+      MP_SMTP_TLS_KEY: "sans:mailpit,localhost"
+      MP_SMTP_REQUIRE_TLS: "true"
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"

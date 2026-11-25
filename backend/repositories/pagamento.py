@@ -8,7 +8,15 @@ from models.models import Consulta, Paciente, Pagamento, Usuario
 
 
 def buscar_consulta_por_id(id_consulta: int, db: Session):
-    """Consulta pelo id, com paciente, usuário, endereço e pagamento; ou None."""
+    """Consulta pelo id, com paciente, usuário, endereço e pagamento; ou None.
+
+    Args:
+        id_consulta (int): Id da consulta.
+        db (Session): Sessão do banco de dados.
+
+    Returns:
+        Consulta | None: Consulta com os relacionamentos carregados, ou None.
+    """
     return (
         db.query(Consulta)
         .options(
@@ -21,7 +29,15 @@ def buscar_consulta_por_id(id_consulta: int, db: Session):
 
 
 def buscar_pagamento_por_consulta(id_consulta: int, db: Session):
-    """Pagamento da consulta, ou None se ainda não houver."""
+    """Pagamento da consulta, ou None se ainda não houver.
+
+    Args:
+        id_consulta (int): Id da consulta.
+        db (Session): Sessão do banco de dados.
+
+    Returns:
+        Pagamento | None: Pagamento da consulta, ou None.
+    """
     return (
         db.query(Pagamento)
         .filter(Pagamento.id_consulta == id_consulta)
@@ -29,20 +45,21 @@ def buscar_pagamento_por_consulta(id_consulta: int, db: Session):
     )
 
 
-def criar_pagamento(
-    id_consulta: int,
-    status: str,
-    db: Session,
-    metodo: str | None = None,
-    id_transacao: str | None = None,
-):
-    """Cria o pagamento com data e hora atuais e faz commit."""
+def criar_pagamento(id_consulta: int, status: str, db: Session):
+    """Cria o pagamento com data e hora atuais e faz commit.
+
+    Args:
+        id_consulta (int): Id da consulta paga.
+        status (str): Status inicial do pagamento.
+        db (Session): Sessão do banco de dados.
+
+    Returns:
+        Pagamento: Pagamento criado, recarregado do banco.
+    """
     agora = datetime.now()
     pagamento = Pagamento(
         id_consulta=id_consulta,
         status=status,
-        metodo=metodo,
-        id_transacao=id_transacao,
         data=agora.date(),
         hora=agora.time().replace(microsecond=0),
     )
@@ -52,31 +69,21 @@ def criar_pagamento(
     return pagamento
 
 
-def atualizar_pagamento(
-    pagamento: Pagamento,
-    db: Session,
-    status: str | None = None,
-    metodo: str | None = None,
-    id_transacao: str | None = None,
-):
-    """Atualiza status, método e/ou transação (só o que vier preenchido).
+def atualizar_status_pagamento(pagamento: Pagamento, status: str, db: Session):
+    """Troca o status, atualiza data e hora para agora e faz commit.
 
-    Data e hora passam a ser as do momento da mudança. Faz commit.
+    Args:
+        pagamento (Pagamento): Pagamento a atualizar.
+        status (str): Novo status.
+        db (Session): Sessão do banco de dados.
+
+    Returns:
+        Pagamento: Pagamento atualizado, recarregado do banco.
     """
-    if status is not None:
-        pagamento.status = status
-    if metodo is not None:
-        pagamento.metodo = metodo
-    if id_transacao is not None:
-        pagamento.id_transacao = id_transacao
     agora = datetime.now()
+    pagamento.status = status
     pagamento.data = agora.date()
     pagamento.hora = agora.time().replace(microsecond=0)
     db.commit()
     db.refresh(pagamento)
     return pagamento
-
-
-def atualizar_status_pagamento(pagamento: Pagamento, status: str, db: Session):
-    """Troca o status, atualiza data e hora para agora e faz commit."""
-    return atualizar_pagamento(pagamento, db, status=status)

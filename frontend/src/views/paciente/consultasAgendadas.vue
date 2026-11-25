@@ -9,7 +9,7 @@
  *   PATCH /api/v1/consultas/{id}/cancelar                     cancela a consulta
  *
  * Situação mostrada no cartão (derivada do status da consulta e do pagamento):
- *   pagamento  agendada, pagamento pendente/recusado/cancelado ou não iniciado -> "Realizar pagamento"
+ *   pagamento  agendada, pagamento ainda não aprovado  -> "Realizar pagamento"
  *   confirmado pagamento aprovado e horário por vir     -> "Entrar na chamada" + cancelar
  *   realizada  consulta realizada                       -> "Avaliar" (se ainda não avaliou)
  *   expirado   horário passou sem a consulta acontecer  -> "Link expirado"
@@ -18,6 +18,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/services/api'
+import { urlExternaSegura } from '@/utils/url'
 
 const router = useRouter()
 
@@ -109,12 +110,13 @@ async function entrarNaChamada(id) {
   const aba = window.open('', '_blank')
   try {
     const dados = await api.get(`/api/v1/consultas/${id}/videochamada`)
-    if (!dados.meet_link) throw new Error('A chamada desta consulta ainda não está disponível.')
+    const link = urlExternaSegura(dados.meet_link)
+    if (!link) throw new Error('A chamada desta consulta ainda não está disponível.')
     if (aba) {
       aba.opener = null
-      aba.location.href = dados.meet_link
+      aba.location.href = link
     } else {
-      window.location.href = dados.meet_link
+      window.location.href = link
     }
   } catch (e) {
     aba?.close()
@@ -132,11 +134,7 @@ async function cancelar(id) {
   try {
     await api.patch(`/api/v1/consultas/${id}/cancelar`)
     const ag = agendamentos.value.find((a) => a.id === id)
-    if (ag) {
-      ag.status = 'cancelada'
-      // Pagamento não aprovado é cancelado junto com a consulta (regra do backend)
-      if (ag.pagamento && ag.pagamento !== 'aprovado') ag.pagamento = 'cancelado'
-    }
+    if (ag) ag.status = 'cancelada'
     aviso.value = 'Consulta cancelada.'
   } catch (e) {
     erro.value = e.message || 'Não foi possível cancelar a consulta.'
@@ -268,7 +266,7 @@ onMounted(carregar)
                 <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                 </svg>
-                {{ ag.pagamento === 'recusado' ? 'Pagamento Recusado' : ag.pagamento === 'pendente' ? 'Pagamento Pendente' : 'Aguardando Pagamento' }}
+                Aguardando Pagamento
               </span>
               <span
                 v-else-if="ag.status === 'cancelada'"
@@ -343,7 +341,7 @@ onMounted(carregar)
           <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" />
           </svg>
-          {{ ag.pagamento === 'recusado' || ag.pagamento === 'cancelado' ? 'Tentar Novamente' : ag.pagamento === 'pendente' ? 'Acompanhar Pagamento' : 'Realizar Pagamento' }}
+          Realizar Pagamento
         </button>
         <button
           v-else-if="ag.status === 'confirmado'"

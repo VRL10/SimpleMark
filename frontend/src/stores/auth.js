@@ -15,7 +15,7 @@ const CHAVE = 'simplemark.auth'
 
 // Área inicial de cada perfil, logo depois do login
 export const ROTA_INICIAL_PERFIL = {
-  paciente: { name: 'home' },
+  paciente: { name: 'meusAgendamentos' },
   profissional: { name: 'dashboardDoProfissional' },
   administrador: { name: 'gestaoDeUsuarios' },
 }

@@ -24,7 +24,17 @@ router = APIRouter(prefix="/pagamento", tags=["Pagamento"])
 
 
 def _paciente_logado(usuario: UsuarioAtual) -> Paciente:
-    """Devolve o paciente da conta logada; outros perfis recebem 403."""
+    """Devolve o paciente da conta logada; outros perfis recebem 403.
+
+    Args:
+        usuario (Usuario): Usuário logado, injetado pelo FastAPI.
+
+    Returns:
+        Paciente: Paciente vinculado à conta logada.
+
+    Raises:
+        ErroNegocio: Quando a conta logada não é de paciente (403).
+    """
     paciente = usuario.paciente
     if paciente is None:
         raise ErroNegocio("Apenas pacientes podem realizar o pagamento.", 403)
@@ -39,31 +49,21 @@ def criar_preferencia(
 ):
     """Cria a preferência de pagamento da consulta no Mercado Pago.
 
-    Somente o paciente da consulta (403 para outros perfis). O checkout só aceita
-    a forma escolhida (pix, cartao ou boleto). Responde 404 se a consulta não
-    existir ou for de outro paciente, 400 se estiver cancelada, com horário já
-    passado, sem valor ou já paga e 502 se o Mercado Pago não devolver o link. O
-    pagamento local fica pendente.
+    Somente o paciente da consulta (403 para outros perfis). Responde 404 se a
+    consulta não existir ou for de outro paciente, 400 se estiver cancelada, sem
+    valor ou já paga e 502 se o Mercado Pago não devolver o link. O pagamento
+    local fica pendente.
+
+    Args:
+        dados (CriarPreferenciaEntrada): Id da consulta a pagar.
+        usuario (Usuario): Usuário logado, injetado pelo FastAPI.
+        db (Session): Sessão do banco de dados, injetada pelo FastAPI.
+
+    Returns:
+        PreferenciaSaida: Dados da preferência criada, com o link de pagamento.
     """
-    resultado = criar_preferencia_consulta(
-        dados.id_consulta, dados.metodo, _paciente_logado(usuario), db
-    )
+    resultado = criar_preferencia_consulta(dados.id_consulta, _paciente_logado(usuario), db)
     return PreferenciaSaida(**resultado)
-
-
-@router.get("/retorno", response_model=RetornoPagamentoSaida)
-def retorno(
-    db: Session = Depends(get_db),
-    payment_id: str | None = Query(default=None),
-    collection_id: str | None = Query(default=None),
-    external_reference: str | None = Query(default=None),
-):
-    """Confirma no Mercado Pago o resultado do checkout (usado pela tela de retorno).
-
-    Rota pública: o status vem sempre do Mercado Pago, nunca da URL. Responde 400
-    se o external_reference não for um id de consulta.
-    """
-    return processar_retorno(payment_id, collection_id, external_reference, db)
 
 
 @router.get("/retorno/sucesso", response_model=RetornoPagamentoSaida)
@@ -78,6 +78,15 @@ def retorno_sucesso(
     Rota pública. Consulta o pagamento no Mercado Pago, atualiza o status local e
     devolve o resultado. Responde 400 se o external_reference não for um id de
     consulta.
+
+    Args:
+        db (Session): Sessão do banco de dados, injetada pelo FastAPI.
+        payment_id (str | None): Id do pagamento enviado pelo Mercado Pago.
+        collection_id (str | None): Id da cobrança, alternativa ao ``payment_id``.
+        external_reference (str | None): Referência externa (id da consulta).
+
+    Returns:
+        RetornoPagamentoSaida: Resultado do processamento do retorno.
     """
     return processar_retorno(payment_id, collection_id, external_reference, db)
 
@@ -89,7 +98,17 @@ def retorno_pendente(
     collection_id: str | None = Query(default=None),
     external_reference: str | None = Query(default=None),
 ):
-    """Retorno do Mercado Pago com pagamento pendente; mesmo tratamento do sucesso."""
+    """Retorno do Mercado Pago com pagamento pendente; mesmo tratamento do sucesso.
+
+    Args:
+        db (Session): Sessão do banco de dados, injetada pelo FastAPI.
+        payment_id (str | None): Id do pagamento enviado pelo Mercado Pago.
+        collection_id (str | None): Id da cobrança, alternativa ao ``payment_id``.
+        external_reference (str | None): Referência externa (id da consulta).
+
+    Returns:
+        RetornoPagamentoSaida: Resultado do processamento do retorno.
+    """
     return processar_retorno(payment_id, collection_id, external_reference, db)
 
 
@@ -100,7 +119,17 @@ def retorno_falha(
     collection_id: str | None = Query(default=None),
     external_reference: str | None = Query(default=None),
 ):
-    """Retorno do Mercado Pago com pagamento recusado; mesmo tratamento do sucesso."""
+    """Retorno do Mercado Pago com pagamento recusado; mesmo tratamento do sucesso.
+
+    Args:
+        db (Session): Sessão do banco de dados, injetada pelo FastAPI.
+        payment_id (str | None): Id do pagamento enviado pelo Mercado Pago.
+        collection_id (str | None): Id da cobrança, alternativa ao ``payment_id``.
+        external_reference (str | None): Referência externa (id da consulta).
+
+    Returns:
+        RetornoPagamentoSaida: Resultado do processamento do retorno.
+    """
     return processar_retorno(payment_id, collection_id, external_reference, db)
 
 
@@ -110,6 +139,14 @@ async def notificacao(request: Request, db: Session = Depends(get_db)):
 
     Rota pública. Lê o id do pagamento da query string ou do corpo; notificação
     que não é de pagamento, ou sem id, é ignorada.
+
+    Args:
+        request (Request): Requisição do webhook, com query string e corpo JSON.
+        db (Session): Sessão do banco de dados, injetada pelo FastAPI.
+
+    Returns:
+        dict: ``{"status": "ignorado"}`` para notificações que não são de pagamento;
+        caso contrário, o resultado de ``processar_notificacao``.
     """
     id_pagamento = request.query_params.get("data.id") or request.query_params.get("id")
 
@@ -145,13 +182,20 @@ def obter_pagamento(
 
     Somente o paciente da consulta (403 para outros perfis). Responde 404 se a
     consulta não existir, for de outro paciente ou não tiver pagamento.
+
+    Args:
+        id_consulta (int): Id da consulta.
+        usuario (Usuario): Usuário logado, injetado pelo FastAPI.
+        db (Session): Sessão do banco de dados, injetada pelo FastAPI.
+
+    Returns:
+        PagamentoSaida: Id da consulta, status, data e hora do pagamento.
     """
     paciente = _paciente_logado(usuario)
     pagamento = consultar_pagamento(id_consulta, paciente, db)
     return PagamentoSaida(
         id_consulta=pagamento.id_consulta,
         status=pagamento.status,
-        metodo=pagamento.metodo,
         data=pagamento.data,
         hora=pagamento.hora,
     )
