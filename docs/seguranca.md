@@ -18,7 +18,7 @@ foi só a suíte de testes `backend/tests/test_seguranca.py` e este relatório.
 | 7 | Login responde mais rápido quando a conta não existe (enumeração por tempo) | Baixo | `services/LoginService/autenticacao.py:98-104` |
 | 8 | Validações de entrada faltando (lote de horários sem limite, `hora_fim` > `hora_inicio`, `valor_consulta` aceita 0, upload lido inteiro antes de checar tamanho, `%`/`_` na busca) | Baixo | `schemas/horarios_profissional.py`, `schemas/porfissional_minha_conta.py`, `services/porfissional_minha_conta.py:146`, `repositories/busca_profissional.py:65` |
 | 9 | Webhook do Mercado Pago não confere a assinatura `x-signature` | Baixo | `routers/pagamento.py` (`/pagamento/notificacao`) |
-| 10 | CORS com métodos e cabeçalhos `*` e origens fixas no código | Baixo | `main.py:55-69` |
+| 10 | CORS com métodos e cabeçalhos `*`; origens permitidas configuráveis por variável de ambiente | Baixo | `main.py`, `core/cors.py` |
 | 11 | `/docs` e `/openapi.json` abertos; PostgreSQL publicado na porta 5432 | Baixo | `main.py`, `compose.yaml` |
 | — | SQL injection | — | **Nada encontrado** ✅ |
 | — | Senhas sem hash | — | **Nada encontrado** (Argon2) ✅ |
@@ -602,28 +602,13 @@ cabeçalho `x-signature` com a *secret* do webhook configurada no painel do Merc
 
 ### Achado 10 — CORS — **BAIXO**
 
-`main.py:55-69` usa uma lista explícita de origens (bom — não é `"*"`), mas com
-`allow_methods=["*"]` e `allow_headers=["*"]` junto de `allow_credentials=True`, e as origens
-fixas no código. Antes:
+`core/cors.py` mantém origens explicitamente permitidas (não usa `"*"`). Origens em
+`CORS_ORIGENS`, separadas por vírgulas, são adicionadas à lista padrão, sem remover as origens
+já permitidas. `allow_methods=["*"]`, `allow_headers=["*"]` e `allow_credentials=True`
+continuam habilitados. Exemplo:
 
-```python
-allow_origins=[
-    "http://localhost", "http://127.0.0.1",
-    "http://localhost:5173", "http://127.0.0.1:5173",
-    "http://localhost:8080", "http://127.0.0.1:8080",
-],
-allow_credentials=True,
-allow_methods=["*"],
-allow_headers=["*"],
-```
-
-Depois:
-
-```python
-allow_origins=os.getenv("CORS_ORIGENS", "http://localhost,http://localhost:5173").split(","),
-allow_credentials=False,  # o token vai no cabeçalho Authorization, não em cookie
-allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-allow_headers=["Authorization", "Content-Type"],
+```env
+CORS_ORIGENS=https://meu-frontend.exemplo.com
 ```
 
 ---

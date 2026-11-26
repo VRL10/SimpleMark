@@ -12,7 +12,7 @@ usuário com permissão de DDL. A API conecta com um usuário que só lê e grav
 import os
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from core.cors import configurar_cors
 from models import models
 import models.acesso  # registra credencial e sessao_login sem alterar as tabelas do grupo
 import models.administracao  # registra banimento e logs da administração sem alterar as tabelas do grupo
@@ -57,21 +57,7 @@ app = FastAPI()
 
 registrar_erros(app)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://simplemark-frontend.onrender.com",
-        "http://localhost",
-        "http://127.0.0.1",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+configurar_cors(app)
 
 app.include_router(horarios_profissional_router)
 app.include_router(cadastro_router, prefix="/api/v1")

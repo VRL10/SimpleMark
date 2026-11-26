@@ -28,6 +28,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY:?Defina SECRET_KEY no .env}
       AMBIENTE: ${AMBIENTE:-producao}
+      CORS_ORIGENS: ${CORS_ORIGENS:-https://simplemark-frontend.onrender.com,http://localhost,http://127.0.0.1,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
       # Administradora inicial (criada só se as três estiverem definidas)
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_SENHA: ${ADMIN_SENHA:-}
