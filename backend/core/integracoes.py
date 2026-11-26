@@ -100,3 +100,69 @@ def smtp_ssl() -> bool:
         bool: ``True`` se a conexão deve usar SSL direto.
     """
     return os.getenv("SMTP_SSL", "false").strip().lower() in {"1", "true", "sim"}
+
+
+# ---------------------------------------------------------------------------
+# Provedor de e-mail: API do Brevo (produção) ou SMTP (teste local com Mailpit)
+# ---------------------------------------------------------------------------
+
+PROVEDOR_BREVO = "brevo"
+PROVEDOR_SMTP = "smtp"
+
+
+def email_provedor() -> str:
+    """Por onde os e-mails saem: ``brevo`` (API HTTP) ou ``smtp``.
+
+    Vem de EMAIL_PROVEDOR. Sem ela, usa o Brevo quando BREVO_API_KEY está
+    definida e o SMTP nos demais casos.
+
+    Returns:
+        str: ``"brevo"`` ou ``"smtp"``.
+
+    Raises:
+        ValueError: Quando EMAIL_PROVEDOR tem um valor desconhecido.
+    """
+    valor = os.getenv("EMAIL_PROVEDOR", "").strip().lower()
+    if not valor:
+        return PROVEDOR_BREVO if brevo_api_key() else PROVEDOR_SMTP
+    if valor not in {PROVEDOR_BREVO, PROVEDOR_SMTP}:
+        raise ValueError("EMAIL_PROVEDOR deve ser 'brevo' ou 'smtp'.")
+    return valor
+
+
+def brevo_api_key() -> str:
+    """Chave da API do Brevo (BREVO_API_KEY). Nunca vai para log nem resposta.
+
+    Returns:
+        str: Chave da API, ou string vazia quando não configurada.
+    """
+    return os.getenv("BREVO_API_KEY", "").strip()
+
+
+def brevo_api_url() -> str:
+    """Endpoint de e-mail transacional do Brevo (BREVO_API_URL, só para testes).
+
+    Returns:
+        str: URL do endpoint ``/v3/smtp/email``.
+    """
+    return os.getenv("BREVO_API_URL", "").strip() or "https://api.brevo.com/v3/smtp/email"
+
+
+def email_remetente() -> str:
+    """Endereço do "De" nos e-mails enviados pelo Brevo (EMAIL_REMETENTE).
+
+    Precisa ser um remetente ou domínio validado na conta do Brevo.
+
+    Returns:
+        str: E-mail remetente, ou string vazia quando não configurado.
+    """
+    return os.getenv("EMAIL_REMETENTE", "").strip()
+
+
+def email_remetente_nome() -> str:
+    """Nome exibido no "De" dos e-mails (EMAIL_REMETENTE_NOME, padrão SimpleMark).
+
+    Returns:
+        str: Nome do remetente.
+    """
+    return os.getenv("EMAIL_REMETENTE_NOME", "").strip() or "SimpleMark"

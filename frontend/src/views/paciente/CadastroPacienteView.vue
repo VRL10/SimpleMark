@@ -98,9 +98,9 @@ const mascaras = {
   // só letras, espaço, ponto, barra e hífen (ex.: SSP/PI, DETRAN-PI, CIN), sem números
   orgaoEmissor: (v) => limparEspacos(v.replace(/[^\p{L}\s/.-]/gu, '')).slice(0, 20),
 
-  // sem espaços e sem números; só letras, @ . _ + - e um único @
+  // sem espaços; só letras, números, @ . _ + - e um único @
   email: (v) => {
-    const limpo = v.replace(/[^a-zA-Z@._+-]/g, '').toLowerCase().slice(0, 100)
+    const limpo = v.replace(/[^a-zA-Z0-9@._+-]/g, '').toLowerCase().slice(0, 100)
     const i = limpo.indexOf('@')
     return i === -1 ? limpo : limpo.slice(0, i + 1) + limpo.slice(i + 1).replace(/@/g, '')
   },

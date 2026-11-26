@@ -40,6 +40,13 @@ services:
       # Retentativas do envio de e-mail
       VIDEOCHAMADA_TENTATIVAS: ${VIDEOCHAMADA_TENTATIVAS:-3}
       VIDEOCHAMADA_BACKOFF_SEGUNDOS: ${VIDEOCHAMADA_BACKOFF_SEGUNDOS:-2}
+      # Provedor de e-mail: "brevo" (API HTTP, produção) ou "smtp" (Mailpit local).
+      # Vazio: usa o Brevo se BREVO_API_KEY estiver definida; senão, o SMTP.
+      EMAIL_PROVEDOR: ${EMAIL_PROVEDOR:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      # Remetente validado na conta do Brevo
+      EMAIL_REMETENTE: ${EMAIL_REMETENTE:-}
+      EMAIL_REMETENTE_NOME: ${EMAIL_REMETENTE_NOME:-SimpleMark}
       # E-mail ao paciente (SMTP). Para testes locais use o Mailpit abaixo:
       # SMTP_HOST=mailpit, SMTP_PORT=1025, SMTP_USAR_TLS=false (ver README_VIDEOCHAMADA.md)
       
