@@ -1,7 +1,7 @@
-"""Envio de e-mail por SMTP e os modelos das mensagens da teleconsulta ao paciente.
+"""Envio de e-mail e os modelos das mensagens da teleconsulta ao paciente.
 
-Usa só a biblioteca padrão (smtplib/email). O servidor vem das variáveis
-SMTP_* de core/integracoes.py.
+Sai pela API do Brevo ou por SMTP, conforme EMAIL_PROVEDOR. O SMTP usa só a
+biblioteca padrão (smtplib/email) e as variáveis SMTP_* de core/integracoes.py.
 
 LGPD: as mensagens trazem apenas nome do paciente, nome do profissional, data,
 hora e link. Nada de especialidade, queixa, diagnóstico ou outro dado clínico.
@@ -14,6 +14,8 @@ from email.message import EmailMessage
 from html import escape
 
 from core.integracoes import (
+    PROVEDOR_BREVO,
+    email_provedor,
     smtp_host,
     smtp_porta,
     smtp_remetente,
@@ -22,6 +24,7 @@ from core.integracoes import (
     smtp_usar_tls,
     smtp_usuario,
 )
+from services.brevo import ErroBrevo, enviar_pelo_brevo
 
 _DIAS_SEMANA = (
     "segunda-feira",
@@ -187,7 +190,44 @@ def email_cancelamento(dados: DadosEmailConsulta) -> EmailMessage:
 
 
 def enviar_email(mensagem: EmailMessage) -> None:
-    """Envia a mensagem pelo SMTP configurado. Qualquer falha vira ErroEnvioEmail.
+    """Envia a mensagem pelo provedor configurado. Qualquer falha vira ErroEnvioEmail.
+
+    Args:
+        mensagem (EmailMessage): Mensagem a enviar.
+
+    Raises:
+        ErroEnvioEmail: Se o provedor não estiver configurado ou o envio falhar.
+    """
+    if email_provedor() == PROVEDOR_BREVO:
+        _enviar_pelo_brevo(mensagem)
+        return
+    _enviar_por_smtp(mensagem)
+
+
+def _enviar_pelo_brevo(mensagem: EmailMessage) -> None:
+    """Envia pela API do Brevo as partes de texto e HTML da mensagem.
+
+    Args:
+        mensagem (EmailMessage): Mensagem montada por ``_montar``.
+
+    Raises:
+        ErroEnvioEmail: Se o Brevo não estiver configurado ou recusar o envio.
+    """
+    texto = mensagem.get_body(preferencelist=("plain",))
+    html = mensagem.get_body(preferencelist=("html",))
+    try:
+        enviar_pelo_brevo(
+            str(mensagem["To"]),
+            str(mensagem["Subject"]),
+            texto.get_content() if texto is not None else "",
+            html.get_content() if html is not None else None,
+        )
+    except ErroBrevo as exc:
+        raise ErroEnvioEmail(str(exc)) from exc
+
+
+def _enviar_por_smtp(mensagem: EmailMessage) -> None:
+    """Envia a mensagem pelo SMTP configurado (variáveis SMTP_*).
 
     Args:
         mensagem (EmailMessage): Mensagem a enviar.
